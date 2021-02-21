@@ -1,0 +1,12 @@
+[
+  {
+    "id": 2234,
+    "name": "Test Project 1",
+    "ForecastedHoursPerWeek": 5
+  },
+  {
+    "id": 1234,
+    "name": "Test Project 2",
+    "ForecastedHoursPerWeek": 5
+  }
+]
