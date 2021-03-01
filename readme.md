@@ -2,6 +2,7 @@ Step 1
 - test gcal api is working as intended
 
 Step 2
+- refactor google quickstart code to async and await
 - use inquirer as an input to pull from a specific date range and get total hours of events
 
 Step 3

@@ -2,94 +2,52 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const {google} = require('googleapis');
+const inquirer = require('inquirer');
+const googleAuth = require('./src/googleAuth');
+const calendarService = require('./src/calendarService');
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
-// The file token.json stores the user's access and refresh tokens, and is
-const TOKEN_PATH = path.join(__dirname, 'token.json');
-// created automatically when the authorization flow completes for the first
-// time.
 
-// Load client secrets from a local file.
-fs.readFile(path.join(__dirname, 'credentials.json'), (err, content) => {
-  if (err) return console.log('Error loading client secret file:', err);
-  // Authorize a client with credentials, then call the Google Calendar API.
-  const events = authorize(JSON.parse(content), listEvents);
+let filter = {};
+let questions = [
+  {
+    type: 'input',
+    name: 'dateFrom',
+    message: 'Start date (YYYY-MM-DD)?'
+  },
+  {
+    type: 'input',
+    name: 'dateTo',
+    message: 'End date (YYYY-MM-DD)?'
+  }
+];
+
+/**
+ * Triggers call to googleAuth & calendarService to 
+ * retrieve events from calendar api
+ * @param {Object} filter with properties minDate, maxDate
+ */
+async function triggerCalendarAPI(filter) {
+  const credentials = JSON.parse(fs.readFileSync('./credentials.json'));
+  // TODO: Update this to more reusable error format
+  // TODO: Add Debug logs
+  try{
+    const oAuth2Client = await googleAuth.genOAuthClient(credentials, SCOPES);
+    debug('oAuthClient received, getting events....')
+    const events = await calendarService.getGCalEvents(oAuth2Client, filter);
+    console.log(events);
+    return Promise.resolve(events);
+  }catch(err){
+    throw new Error('🤯 No records found');
+  }
+}
+
+inquirer.prompt(questions).then(answers => {
+  filter = {
+    timeMin: answers['dateFrom'],
+    timeMax: answers['dateTo'],
+  }
+  return triggerCalendarAPI(filter);
+}).catch(err => {
+  console.log('🤬🤬🤬 Error retrieving events from the calendar' + err)
 });
-
-/**
- * Create an OAuth2 client with the given credentials, and then execute the
- * given callback function.
- * @param {Object} credentials The authorization client credentials.
- * @param {function} callback The callback to call with the authorized client.
- */
-function authorize(credentials, callback) {
-  const {client_secret, client_id, redirect_uris} = credentials.web;
-  const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0]);
-
-  // Check if we have previously stored a token.
-  fs.readFile(TOKEN_PATH, (err, token) => {
-    if (err) return getAccessToken(oAuth2Client, callback);
-    oAuth2Client.setCredentials(JSON.parse(token));
-    const events = callback(oAuth2Client);
-    // console.log(events);
-  });
-}
-
-/**
- * Get and store new token after prompting for user authorization, and then
- * execute the given callback with the authorized OAuth2 client.
- * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
- * @param {getEventsCallback} callback The callback for the authorized client.
- */
-function getAccessToken(oAuth2Client, callback) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  });
-  console.log('Authorize this app by visiting this url:', authUrl);
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  rl.question('Enter the code from that page here: ', (code) => {
-    rl.close();
-    oAuth2Client.getToken(code, (err, token) => {
-      if (err) return console.error('Error retrieving access token', err);
-      oAuth2Client.setCredentials(token);
-      // Store the token to disk for later program executions
-      fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-        if (err) return console.error(err);
-        console.log('Token stored to', TOKEN_PATH);
-      });
-      callback(oAuth2Client);
-    });
-  });
-}
-
-/**
- * Lists the next 10 events on the user's primary calendar.
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
- */
-function listEvents(auth) {
-  const calendar = google.calendar({version: 'v3', auth});
-  calendar.events.list({
-    calendarId: 'primary',
-    timeMin: (new Date()).toISOString(),
-    maxResults: 10,
-    singleEvents: true,
-    orderBy: 'startTime',
-  }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
-    const events = res.data.items;
-    if (events.length) {
-      console.log('Upcoming 10 events:');
-      events.map((event, i) => {
-        const start = event.start.dateTime || event.start.date;
-        console.log(`${start} - ${event.summary}`);
-      });
-    } else {
-      console.log('No upcoming events found.');
-    }
-  });
-}
