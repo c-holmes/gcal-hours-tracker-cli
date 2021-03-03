@@ -1,5 +1,8 @@
 const fs = require('fs');
 const {google} = require('googleapis');
+const inquirer = require('inquirer');
+
+const TOKEN_PATH = './token.json';
 
 /**
  * Generates an authorized Oauth client
@@ -7,12 +10,13 @@ const {google} = require('googleapis');
  * @param {array<string>} scopes The Scopes for your OauthClient
  */
 async function genOAuthClient(credentials, scopes) {
+  let oAuth2Client;
   try{
     const {client_secret, client_id, redirect_uris} = credentials.web;
-    const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+    oAuth2Client = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
     google.options({auth: oAuth2Client});
 
-    const token = fs.readFileSync('./token.json');
+    const token = fs.readFileSync(TOKEN_PATH);
     if (token !== undefined || token !== {}) {
       oAuth2Client.setCredentials(JSON.parse(token))
     } else {
@@ -34,7 +38,7 @@ async function genOAuthClient(credentials, scopes) {
 async function getAccessToken(oAuth2Client, scopes) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
-    scope: SCOPES,
+    scope: scopes,
   });
   console.log('⚠️ Authorize this app by visiting this url:', authUrl);
   let question = [

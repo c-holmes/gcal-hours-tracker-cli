@@ -29,15 +29,15 @@ let questions = [
  */
 async function triggerCalendarAPI(filter) {
   const credentials = JSON.parse(fs.readFileSync('./credentials.json'));
-  // TODO: Update this to more reusable error format
+  // TODO: Clean up error logs and Update to be more reusable
   // TODO: Add Debug logs
   try{
     const oAuth2Client = await googleAuth.genOAuthClient(credentials, SCOPES);
-    debug('oAuthClient received, getting events....')
     const events = await calendarService.getGCalEvents(oAuth2Client, filter);
     console.log(events);
     return Promise.resolve(events);
   }catch(err){
+    console.log(err);
     throw new Error('🤯 No records found');
   }
 }
