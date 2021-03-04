@@ -7,15 +7,10 @@ const {google} = require('googleapis');
 async function getGCalEvents(auth, filter) {
   try{
     const calendar = google.calendar({version: 'v3', auth});
-    // default timeMin is one week back
-    // TODO: set defaultMin to last Monday
-    const timeMin = filter.timeMin === "" ? (Date.now() - 604800000) : filter.timeMin;
-    // TODO: set defaultMax to 7days after defaultMin
-    const timeMax = filter.timeMax === "" ? Date.now() : filter.timeMax;
     const events = await calendar.events.list({
       calendarId: 'primary',
-      timeMin: (new Date(timeMin).toISOString()),
-      timeMax: (new Date(timeMax).toISOString()),
+      timeMin: (new Date(filter.timeMin).toISOString()),
+      timeMax: (new Date(filter.timeMax).toISOString()),
       maxResults: 100,
       singleEvents: true,
       orderBy: 'startTime',

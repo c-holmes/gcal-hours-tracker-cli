@@ -9,18 +9,34 @@ const calendarService = require('./src/calendarService');
 const SCOPES = ['https://www.googleapis.com/auth/calendar.readonly'];
 
 let filter = {};
+const prevMonday = getPrevMonday();
 let questions = [
   {
     type: 'input',
     name: 'dateFrom',
-    message: 'Start date (YYYY-MM-DD)?'
+    message: 'Start date (YYYY-MM-DD)?',
+    default: new Date(prevMonday).toISOString(),
   },
   {
     type: 'input',
     name: 'dateTo',
-    message: 'End date (YYYY-MM-DD)?'
+    message: 'End date (YYYY-MM-DD)?',
+    default: new Date(prevMonday + 5.184e+8).toISOString(),
   }
 ];
+
+/**
+ * Returns the Date of the last Monday
+ */
+function getPrevMonday() {
+  const currentDate = new Date();
+  let day = currentDate.getDay();
+  if (day === 1) {
+    return currentDate - 6.048e+8;
+  } else {
+    return currentDate - (day * 8.64e+7);
+  }
+}
 
 /**
  * Triggers call to googleAuth & calendarService to 
