@@ -18,7 +18,6 @@ async function getGCalEvents(auth, filter) {
     const parsedEvents = events.data.items.map((event) => {
       return {
         summary: event.summary,
-        status: event.status,
         start: event.start.dateTime,
         end: event.end.dateTime,
       };
