@@ -22,7 +22,7 @@ async function getGCalEvents(auth, filter) {
         end: event.end.dateTime,
       };
     });
-    return parsedEvents;
+    return Promise.resolve(parsedEvents);
   }catch(err){
     console.log(err);
   }

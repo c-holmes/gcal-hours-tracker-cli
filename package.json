@@ -6,12 +6,13 @@
     "node": ">= 7.6.0"
   },
   "scripts": {
-    "watch": "nodemon ./start.js"
+    "start": "node index.js",
+    "save-test": "node index.js save-test",
+    "test": "node index.js test"
   },
   "dependencies": {
     "debug": "^4.3.1",
     "googleapis": "^39.2.0",
     "inquirer": "^7.3.3"
-  },
-  "devDependencies": {}
+  }
 }
