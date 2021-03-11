@@ -16,16 +16,33 @@ async function getGCalEvents(auth, filter) {
       orderBy: 'startTime',
     });
     const parsedEvents = events.data.items.map((event) => {
-      return {
-        summary: event.summary,
-        start: event.start.dateTime,
-        end: event.end.dateTime,
-      };
+      if (checkIfValidEvent(event)) {
+        return {
+          summary: event.summary,
+          start: event.start.dateTime,
+          end: event.end.dateTime,
+        };
+      }
     });
-    return Promise.resolve(parsedEvents);
+    return Promise.resolve(parsedEvents.filter(event => event !== undefined));
   }catch(err){
     console.log(err);
   }
+}
+
+//TODO: Optimize this function
+function checkIfValidEvent(event) {
+  const email = 'chris.holmes@jam3.com';
+  let isValid = event.creator.email === email;
+
+  if (event.attendees !== undefined) {
+    const user = event.attendees.find(attendee => attendee.email === email);
+    if (user !== undefined) {
+      isValid = user.responseStatus === 'accepted';
+    }
+  }
+
+  return isValid;
 }
 
 module.exports = {getGCalEvents};

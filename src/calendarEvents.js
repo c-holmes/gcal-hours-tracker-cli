@@ -10,8 +10,8 @@ function getPrevMonday() {
   const currentDate = new Date();
   let day = currentDate.getDay();
   if (day <= 1) {
-    const sundayOffset = day < 1 ? DAY_IN_MILLIS : 0;
-    return currentDate - (WEEK_IN_MILLIS - sundayOffset);
+    // const sundayOffset = day === 0 ? DAY_IN_MILLIS : 0;
+    return currentDate - WEEK_IN_MILLIS;
   } else {
     return currentDate - (day * DAY_IN_MILLIS);
   }
@@ -22,14 +22,15 @@ function getPrevMonday() {
  * @param {number} millis 
  */
 function convertProjectTimeToHours(projects) {
-  Object.entries(projects).forEach(([project, days]) => {
-    Object.entries(days).forEach(([day, millis]) => {
+  Object.entries(projects).forEach(([project, values]) => {
+    Object.entries(values.loggedTime).forEach(([day, millis]) => {
       const hours = millis / HOUR_IN_MILLIS;
       const rHours = Math.floor(hours);
       const mins = Math.floor((hours - rHours) * 60);
-      projects[project][day] = `${rHours}:${mins === 0 ? '00' : mins}`;
+      projects[project]['loggedTime'][day] = `${rHours}:${mins === 0 ? '00' : mins}`;
     });
   });
+  console.log(projects);
   return projects;
 }
 
@@ -51,14 +52,18 @@ function groupEventsById(events) {
     if (id === null) {
       eventsNoId.push(event);
     } else if (projects[id[0]] !== undefined) {
-      if(projects[id[0]][dayOfTheWeek] === undefined) {
-        projects[id[0]][dayOfTheWeek] = diffMilSecs;
+      if(projects[id[0]]['loggedTime'][dayOfTheWeek] === undefined) {
+        projects[id[0]]['loggedTime'][dayOfTheWeek] = diffMilSecs;
       } else {
-        projects[id[0]][dayOfTheWeek] += diffMilSecs; 
+        projects[id[0]]['loggedTime'][dayOfTheWeek] += diffMilSecs; 
       }
     } else {
-      projects[id[0]] = {};
-      projects[id[0]][dayOfTheWeek] = diffMilSecs;
+      projects[id[0]] = {
+        loggedTime: {},
+        memos: '',
+        forecastedTime: '',
+      };
+      projects[id[0]]['loggedTime'][dayOfTheWeek] = diffMilSecs;
     }
   });
   projects = convertProjectTimeToHours(projects);

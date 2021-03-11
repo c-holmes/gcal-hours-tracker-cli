@@ -6,6 +6,10 @@ const inquirer = require('inquirer');
 const googleAuth = require('./src/googleAuth');
 const calendarService = require('./src/calendarService');
 const {groupEventsById, getPrevMonday} = require('./src/calendarEvents');
+const util = require('util')
+
+// TODO: Only pull events you are attending
+// TODO: Increase expiration date on refresh token
 // TODO: Clean up error logs and Update to be more reusable
 // TODO: Add Debug logs
 
@@ -46,7 +50,7 @@ async function triggerCalendarAPI(filter) {
     }
     
     const groupedEvents = groupEventsById(events);
-    console.log(groupedEvents);
+    console.log(util.inspect(groupedEvents, {depth: null, colors: true, compact: false}))
     return Promise.resolve(groupedEvents);
   }catch(err){
     throw new Error('🤯 No records found', err);
