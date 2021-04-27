@@ -23,16 +23,51 @@ function getPrevMonday() {
  */
 function convertProjectTimeToHours(projects) {
   Object.entries(projects).forEach(([project, values]) => {
-    Object.entries(values.loggedTime).forEach(([day, millis]) => {
+    Object.entries(values.loggedTimeByWeek).forEach(([day, millis]) => {
       const hours = millis / HOUR_IN_MILLIS;
       const rHours = Math.floor(hours);
       const mins = Math.floor((hours - rHours) * 60);
-      projects[project]['loggedTime'][day] = `${rHours}:${mins === 0 ? '00' : mins}`;
+      projects[project]['loggedTimeByWeek'][day] = `${rHours}:${mins === 0 ? '00' : mins}`;
     });
   });
-  console.log(projects);
   return projects;
 }
+
+/**
+ * Set Logged Time Per project
+ * @param {Object} event
+ */
+ function setLoggedTime(event, project) {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const dayOfTheWeek = days[new Date(event.start).getDay()];
+    const diffMilSecs = new Date(event.end) - new Date(event.start);
+    const diffHrs = Math.floor((diffMilSecs % WEEK_IN_MILLIS) / HOUR_IN_MILLIS); // hours
+    const diffMins = Math.round(((diffMilSecs % WEEK_IN_MILLIS) % HOUR_IN_MILLIS) / MIN_IN_MILLIS); // minutes
+    if(project['loggedTimeByWeek'][dayOfTheWeek] === undefined) {
+      project['loggedTimeByWeek'][dayOfTheWeek] = diffMilSecs;
+    } else {
+      project['loggedTimeByWeek'][dayOfTheWeek] += diffMilSecs; 
+    }
+    project['loggedTimeTotal'] += diffMilSecs;
+    return project;
+ }
+
+// events - array of objects
+// projects - empty object
+// eventsNoId - empty object
+
+// output
+  // projects
+  // - loggedTime
+  // - memos
+  // - estimatedTime
+  // eventsNoId
+  // - raw event object (to be converted later)
+
+// loop through events
+  // loggedTime
+  // memos
+
 
 /**
  * Loop through Events and Group all events with the same docket id
@@ -41,30 +76,27 @@ function convertProjectTimeToHours(projects) {
 function groupEventsById(events) {
   let projects = {};
   const eventsNoId = [];
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   events.map((event) => {
-    const dayOfTheWeek = days[new Date(event.start).getDay()];
     const id = event.summary.match(/\d{4}/);
-    const diffMilSecs = new Date(event.end) - new Date(event.start);
-    const diffHrs = Math.floor((diffMilSecs % WEEK_IN_MILLIS) / HOUR_IN_MILLIS); // hours
-    const diffMins = Math.round(((diffMilSecs % WEEK_IN_MILLIS) % HOUR_IN_MILLIS) / MIN_IN_MILLIS); // minutes
-
     if (id === null) {
       eventsNoId.push(event);
-    } else if (projects[id[0]] !== undefined) {
-      if(projects[id[0]]['loggedTime'][dayOfTheWeek] === undefined) {
-        projects[id[0]]['loggedTime'][dayOfTheWeek] = diffMilSecs;
-      } else {
-        projects[id[0]]['loggedTime'][dayOfTheWeek] += diffMilSecs; 
-      }
+      return;
+    } 
+    
+    if (projects[id[0]] !== undefined) {
+      projects[id[0]] = setLoggedTime(event, projects[id[0]]); 
+      projects[id[0]].eventMemos += `, ${event.summary}`;
     } else {
       projects[id[0]] = {
-        loggedTime: {},
-        memos: '',
+        eventMemos: event.summary,
+        loggedTimeByWeek: {},
+        loggedTimeTotal: 0,
         forecastedTime: '',
       };
-      projects[id[0]]['loggedTime'][dayOfTheWeek] = diffMilSecs;
+      projects[id[0]] = setLoggedTime(event, projects[id[0]]); 
     }
+
+
   });
   projects = convertProjectTimeToHours(projects);
   return {projects, eventsNoId};
